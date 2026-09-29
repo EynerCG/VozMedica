@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h2>Censo de pacientes hospitalizados</h2>
+<table>
+<tr><th>Cama</th><th>Paciente</th><th>Diagnóstico</th><th>Día</th><th>Estado</th><th>Med. atrasados</th><th>Pendientes</th><th></th></tr>
+{% for f in lista %}
+<tr {% if f.p.id == sel %}class="sel"{% endif %}>
+<td>{{ f.p.cama }}</td>
+<td>{{ f.p.nombre }}</td>
+<td>{{ f.p.diagnostico }}</td>
+<td>{{ f.p.dia }}</td>
+<td {% if f.p.estado == 'critico' %}class="rojo"{% endif %}>{{ ESTADOS[f.p.estado] }}</td>
+<td {% if f.atrasados %}class="rojo"{% endif %}>{{ f.atrasados }}</td>
+<td>{{ f.pendientes }}</td>
+<td><a href="{{ url_for('censo', p=f.p.id) }}">Ver ficha</a></td>
+</tr>
+{% else %}
+<tr><td colspan="8"><i>No hay pacientes hospitalizados.</i></td></tr>
+{% endfor %}
+</table>
+
+{% if ficha %}
+{% set p = ficha.p %}
+<h2>Ficha: Cama {{ p.cama }} - {{ p.nombre }}</h2>
+<table>
+<tr><th style="width:130px">Edad</th><td>{{ p.edad }} años</td></tr>
+<tr><th>Diagnóstico</th><td>{{ p.diagnostico }} (día {{ p.dia }})</td></tr>
+<tr><th>Alergias</th><td {% if p.alergias != 'Ninguna' %}class="rojo"{% endif %}>{{ p.alergias }}</td></tr>
+<tr><th>Signos vitales</th><td>{{ p.signos }}
+<form method="post" action="{{ url_for('actualizar_signos', pid=p.id) }}" style="margin-top:4px">
+<input type="text" name="signos" size="45" placeholder="PA 120/80 - FC 80 - FR 18 - T 36.5 - SatO2 95%">
+<button type="submit">Actualizar</button></form></td></tr>
+<tr><th>Estado</th><td>
+<form method="post" action="{{ url_for('cambiar_estado', pid=p.id) }}" class="linea">
+<select name="estado">
+{% for k, t in ESTADOS.items() %}<option value="{{ k }}" {% if k == p.estado %}selected{% endif %}>{{ t }}</option>{% endfor %}
+</select> <button type="submit">Cambiar</button>
+</form>
+&nbsp;&nbsp;
+<form method="post" action="{{ url_for('dar_alta', pid=p.id) }}" class="linea">
+<button type="submit">Dar de alta</button>
+</form>
+</td></tr>
+</table>
+
+<h3>MEDICAMENTOS</h3>
+<table>
+<tr><th>Hora</th><th>Medicamento</th><th>Estado</th><th>Registró</th><th></th></tr>
+{% for m, est in ficha.meds %}
+<tr>
+<td>{{ m.hora }}</td><td>{{ m.nombre }}</td>
+<td class="{{ est[1] }}">{{ est[0] }}</td>
+<td>{{ m.registro }}</td>
+<td>{% if m.estado == 'P' %}<form method="post" action="{{ url_for('registrar_medicamento', mid=m.id) }}"><button type="submit">Registrar</button></form>{% endif %}</td>
+</tr>
+{% else %}
+<tr><td colspan="5"><i class="gris">Sin medicamentos programados.</i></td></tr>
+{% endfor %}
+</table>
+<form method="post" action="{{ url_for('agregar_medicamento', pid=p.id) }}" style="margin-top:4px">
+Programar: hora <input type="text" name="hora" size="5" placeholder="HH:MM">
+medicamento <input type="text" name="nombre" size="30" placeholder="Dipirona 2 g IV">
+<button type="submit">Agregar</button>
+</form>
+
+<h3>PENDIENTES</h3>
+{% for d in ficha.pend %}
+<form method="post" action="{{ url_for('marcar_pendiente', did=d.id) }}" class="linea">
+<button type="submit">{% if d.hecho %}Desmarcar{% else %}Hecho{% endif %}</button>
+</form>
+<span {% if d.hecho %}class="gris"{% endif %}>{{ d.texto }}{% if d.hecho %} (hecho){% endif %}</span><br>
+{% else %}
+<i class="gris">Sin pendientes.</i><br>
+{% endfor %}
+<form method="post" action="{{ url_for('agregar_pendiente', pid=p.id) }}" style="margin-top:4px">
+<input type="text" name="texto" size="40"> <button type="submit">Agregar pendiente</button>
+</form>
+
+<h3>NOVEDADES</h3>
+{% for n in ficha.nov %}
+<b>{{ n.hora }}</b> - {{ n.texto }} <i class="gris">({{ n.autor }})</i><br>
+{% else %}
+<i class="gris">Sin novedades.</i><br>
+{% endfor %}
+<form method="post" action="{{ url_for('agregar_novedad', pid=p.id) }}">
+<br><textarea name="texto" rows="3"></textarea><br>
+<button type="submit">Guardar novedad</button>
+</form>
+{% endif %}
+
+<h3>REGISTRAR PACIENTE</h3>
+<form method="post" action="{{ url_for('registrar_paciente') }}">
+<table style="width:auto">
+<tr><th>Cama *</th><td><input type="text" name="cama" size="6"></td>
+    <th>Nombre *</th><td><input type="text" name="nombre" size="28"></td></tr>
+<tr><th>Edad</th><td><input type="text" name="edad" size="6"></td>
+    <th>Diagnóstico</th><td><input type="text" name="diagnostico" size="28"></td></tr>
+<tr><th>Alergias</th><td colspan="3"><input type="text" name="alergias" size="20" placeholder="Ninguna"></td></tr>
+<tr><th>Signos</th><td colspan="3"><input type="text" name="signos" size="50" placeholder="PA - FC - FR - T - SatO2"></td></tr>
+</table>
+<button type="submit" style="margin-top:4px">Registrar paciente</button>
+</form>
+{% endblock %}

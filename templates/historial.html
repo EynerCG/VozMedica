@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h2>Historial de entregas</h2>
+<table>
+<tr><th>Fecha</th><th>Hora</th><th>Turno</th><th>Entrega</th><th>Recibe</th><th>Pacientes</th><th>Pendientes</th><th>Observaciones</th></tr>
+{% for e in entregas %}
+<tr><td>{{ e.fecha }}</td><td>{{ e.hora }}</td><td>{{ e.turno }}</td><td>{{ e.entrega }}</td><td>{{ e.recibe }}</td><td>{{ e.pacientes }}</td><td>{{ e.pendientes }}</td><td>{{ e.observaciones }}</td></tr>
+{% endfor %}
+</table>
+{% endblock %}

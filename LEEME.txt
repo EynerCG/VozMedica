@@ -1,0 +1,68 @@
+VOZMEDICA - PLATAFORMA WEB (MVP)
+Proyecto Integrador I - Ingenieria de Sistemas UdeA
+Python + Flask + SQLite
+=================================================
+
+Todos los datos son ficticios.
+
+COMO CORRERLO
+1. Tener Python 3.9 o superior.
+2. Abrir una terminal EN ESTA CARPETA (la que tiene app.py).
+3. Instalar Flask (solo la primera vez):
+      pip install -r requirements.txt
+4. Iniciar:
+      python app.py
+5. Abrir en el navegador:
+      http://127.0.0.1:5000
+6. Para detenerlo: Ctrl + C en la terminal.
+
+La primera vez se crea vozmedica.db (la base de datos) con los datos de prueba.
+Los cambios SE GUARDAN aunque se cierre el programa.
+El boton "Reiniciar datos de prueba" (pantalla de ingreso) deja todo como al principio.
+
+COMO INGRESAR
+- Personal de salud: elegir el nombre en la lista.
+  Enfermeras: Laura Gomez, Andres Salazar, Paula Rios.
+  Medicos (tienen citas virtuales): Dr. Camilo Rojas, Dra. Natalia Velez.
+- Paciente: escribir el documento 1001, 1002 o 1003.
+
+MODULOS Y OBJETIVOS DEL PROYECTO
+1. Seguimiento de pacientes y entrega de turno  (objetivo especifico 2)
+   - Censo con medicamentos atrasados y pendientes.
+   - Ficha: signos, alergias, estado, medicamentos, pendientes y novedades.
+   - Registrar paciente, dar de alta, programar y registrar medicamentos.
+   - Entrega de turno: casilla por paciente + quien recibe. Queda en el historial.
+2. Recursos hospitalarios  (objetivo especifico 4)
+   - Medicamentos, insumos y camillas/camas con cantidad, minimo y ubicacion.
+   - Alerta "BAJO - pedir" cuando la cantidad llega al minimo.
+   - Registro de entradas y salidas con usuario y motivo.
+   - Al registrar un paciente se ocupa una cama; al darlo de alta se libera.
+3. Atencion virtual  (objetivo especifico 3)
+   - El paciente ingresa con su documento y agenda cita con su profesional asignado.
+   - No deja agendar dos citas a la misma hora con el mismo profesional.
+   - Chat por cita (se actualiza cada 15 segundos).
+   - Videollamada con Jitsi Meet (gratis, se abre en otra pestaña).
+   - El medico ve sus citas y las marca como atendidas.
+
+ESCENARIOS DE PRUEBA (objetivo especifico 5)
+1. Entrar como Enf. Laura Gomez. Abrir la ficha de Maria Restrepo (cama 201):
+   el acetaminofen de las 12:00 aparece ATRASADO. Registrarlo.
+2. Agregar una novedad y un pendiente a la cama 201.
+3. Ir a "Entrega de turno", intentar confirmar sin marcar todos -> error.
+   Marcar todos, elegir quien recibe y confirmar -> aparece en Historial.
+4. Ir a "Recursos": Furosemida y Cateter aparecen BAJO. Registrar una entrada.
+5. Cerrar sesion. Entrar como paciente 1001. Agendar una cita.
+   Abrir "Chat y videollamada", escribir un mensaje.
+6. Cerrar sesion. Entrar como Dr. Camilo Rojas -> "Citas virtuales":
+   ver la cita, responder en el chat y marcarla como atendida.
+
+HORA DE LA DEMO
+En app.py, HORA_DEMO = "12:40" fija la hora para que siempre haya medicamentos
+atrasados. Poner HORA_DEMO = None para usar la hora real y luego
+"Reiniciar datos de prueba".
+
+ARCHIVOS
+- app.py        rutas y logica de los 3 modulos, base de datos
+- datos.py      datos de prueba
+- templates/    pantallas (HTML)
+- static/       hoja de estilos

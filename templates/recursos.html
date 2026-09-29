@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h2>Recursos hospitalarios</h2>
+Ver:
+{% for t in ['', 'Medicamento', 'Insumo', 'Camilla'] %}
+{% if tipo == t %}<b>[{{ t or 'Todos' }}]</b>{% else %}<a href="{{ url_for('recursos', tipo=t) }}">{{ t or 'Todos' }}</a>{% endif %}
+{% endfor %}
+<br><br>
+<table>
+<tr><th>Tipo</th><th>Recurso</th><th>Disponible</th><th>Mínimo</th><th>Ubicación</th><th>Estado</th><th>Registrar entrada / salida</th></tr>
+{% for r in filas %}
+<tr>
+<td>{{ r.tipo }}</td>
+<td>{{ r.nombre }}</td>
+<td><b>{{ r.cantidad }}</b></td>
+<td>{{ r.minimo }}</td>
+<td>{{ r.ubicacion }}</td>
+<td>{% if r.cantidad <= r.minimo %}<span class="rojo">BAJO - pedir</span>{% else %}<span class="verde">OK</span>{% endif %}</td>
+<td>
+<form method="post" action="{{ url_for('mover_recurso', rid=r.id) }}">
+<input type="text" name="cantidad" size="3" value="1">
+<input type="text" name="motivo" size="14" placeholder="motivo">
+<button type="submit" name="accion" value="salida">Salida</button>
+<button type="submit" name="accion" value="entrada">Entrada</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</table>
+
+<h3>ÚLTIMOS MOVIMIENTOS</h3>
+<table>
+<tr><th>Fecha</th><th>Recurso</th><th>Cambio</th><th>Motivo</th><th>Usuario</th></tr>
+{% for m in movimientos %}
+<tr><td>{{ m.fecha }}</td><td>{{ m.nombre }}</td><td>{{ '%+d' % m.cambio }}</td><td>{{ m.motivo }}</td><td>{{ m.usuario }}</td></tr>
+{% else %}
+<tr><td colspan="5"><i class="gris">Todavía no hay movimientos.</i></td></tr>
+{% endfor %}
+</table>
+
+<h3>AGREGAR RECURSO</h3>
+<form method="post" action="{{ url_for('nuevo_recurso') }}">
+Tipo <select name="tipo"><option>Medicamento</option><option>Insumo</option><option>Camilla</option></select>
+Nombre <input type="text" name="nombre" size="25">
+Cantidad <input type="text" name="cantidad" size="4">
+Mínimo <input type="text" name="minimo" size="4">
+Ubicación <input type="text" name="ubicacion" size="15">
+<button type="submit">Agregar</button>
+</form>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block cabeza %}<meta http-equiv="refresh" content="15">{% endblock %}
+{% block contenido %}
+<h2>Cita virtual: {{ c.fecha }} {{ c.hora }}</h2>
+<table>
+<tr><th style="width:120px">Paciente</th><td>{{ c.paciente }}</td></tr>
+<tr><th>Profesional</th><td>{{ c.profesional }}</td></tr>
+<tr><th>Motivo</th><td>{{ c.motivo }}</td></tr>
+<tr><th>Estado</th><td>{{ c.estado }}</td></tr>
+</table>
+
+<h3>VIDEOLLAMADA</h3>
+<p>
+<a href="https://meet.jit.si/{{ c.sala }}" target="_blank"><b>Entrar a la videollamada</b></a>
+<span class="gris">(se abre en otra pestaña con Jitsi Meet. Sala: {{ c.sala }})</span>
+</p>
+
+<h3>CHAT</h3>
+<div class="chat">
+{% for m in mensajes %}
+<b>{{ m.hora }} {{ m.autor }}:</b> {{ m.texto }}<br>
+{% else %}
+<i class="gris">Todavía no hay mensajes.</i>
+{% endfor %}
+</div>
+<form method="post" action="{{ url_for('enviar_mensaje', cid=c.id) }}" style="margin-top:4px">
+<input type="text" name="texto" size="60" autofocus> <button type="submit">Enviar</button>
+</form>
+<p class="gris">La página se actualiza sola cada 15 segundos para ver mensajes nuevos.</p>
+<p><a href="{{ url_for('portal' if rol == 'paciente' else 'citas_personal') }}">&lt;&lt; Volver</a></p>
+{% endblock %}

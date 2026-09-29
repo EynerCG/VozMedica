@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VozMédica</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+{% block cabeza %}{% endblock %}
+</head>
+<body>
+<div id="main">
+<table class="sinborde"><tr>
+<td style="width:55%"><h1>VozMédica</h1><i>Gestión inteligente, salud comprensible - v0.9 (beta)</i></td>
+<td style="text-align:right;font-size:12px">
+{% if rol == 'personal' %}
+Servicio: <b>Medicina Interna - Piso 2</b><br>Usuario: <b>{{ nombre }}</b><br>Turno: {{ turno_txt }} - Hora: <b>{{ hora }}</b><br>
+{% elif rol == 'paciente' %}
+Paciente: <b>{{ nombre }}</b><br>
+{% endif %}
+{% if rol %}<a href="{{ url_for('salir') }}">Cerrar sesión</a>{% endif %}
+</td>
+</tr></table>
+<hr>
+{% if rol == 'personal' %}
+<div class="menu">
+{% set v = request.endpoint %}
+{% for ruta, texto in [('censo','Pacientes'), ('entrega','Entrega de turno'), ('historial','Historial'), ('recursos','Recursos'), ('citas_personal','Citas virtuales')] %}
+{% if v == ruta %}<b>[{{ texto }}]</b>{% else %}<a href="{{ url_for(ruta) }}">{{ texto }}</a>{% endif %}
+{% if ruta == 'recursos' and alertas_recursos %}<span class="rojo">({{ alertas_recursos }} bajo mínimo)</span>{% endif %}
+{% endfor %}
+</div>
+{% elif rol == 'paciente' %}
+<div class="menu"><b>[Mis citas virtuales]</b></div>
+{% endif %}
+{% for m in get_flashed_messages() %}
+<div class="msg {% if m.startswith('ERROR') %}error{% endif %}">&gt;&gt; {{ m }}</div>
+{% endfor %}
+
+{% block contenido %}{% endblock %}
+
+</div>
+</body>
+</html>

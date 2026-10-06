@@ -1,0 +1,85 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Inventario{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div><h1>Inventario</h1><p class="sub">Existencias, mínimos de reabastecimiento y ubicación.</p></div>
+  <details class="desplegable desplegable-derecha">
+    <summary class="btn btn-primario">{{ icono('mas') }} Nuevo recurso</summary>
+    <form method="post" action="{{ url_for('admin.nuevo_recurso') }}" class="panel-flotante form-apilado">
+      <h3>Agregar recurso</h3>
+      <label class="campo"><span>Tipo</span><select name="tipo">{% for clave, texto in tipos %}<option value="{{ clave }}">{{ texto }}</option>{% endfor %}</select></label>
+      <label class="campo"><span>Nombre</span><input type="text" name="nombre" placeholder="Ej.: Solución salina 500 ml"></label>
+      <div class="form-fila">
+        <label class="campo crece"><span>Cantidad</span><input type="number" name="cantidad" min="0"></label>
+        <label class="campo crece"><span>Mínimo</span><input type="number" name="minimo" min="0"></label>
+      </div>
+      <label class="campo"><span>Ubicación</span><input type="text" name="ubicacion" placeholder="Ej.: Almacén piso 2"></label>
+      <button type="submit" class="btn btn-primario btn-bloque">Agregar</button>
+    </form>
+  </details>
+</div>
+
+<div class="barra-filtros">
+  <div class="pestanas pestanas-enlace">
+    <a class="pestana {% if not tipo and not solo_bajos %}activa{% endif %}" href="{{ url_for('admin.recursos') }}">Todos</a>
+    {% for clave, texto in tipos %}
+    <a class="pestana {% if tipo == clave %}activa{% endif %}" href="{{ url_for('admin.recursos', tipo=clave) }}">{{ texto }}</a>
+    {% endfor %}
+    <a class="pestana {% if solo_bajos %}activa{% endif %}" href="{{ url_for('admin.recursos', bajos=1) }}">{{ icono('alerta') }} Bajo el mínimo</a>
+  </div>
+</div>
+
+<div class="tarjeta sin-relleno">
+  <table class="tabla tabla-resp">
+    <thead><tr><th>Recurso</th><th>Disponible</th><th>Mínimo</th><th>Ubicación</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+    {% for r in filas %}
+    <tr>
+      <td data-label="Recurso"><b>{{ r.nombre }}</b><small class="tenue bloque">{{ r.tipo }}</small></td>
+      <td data-label="Disponible"><b class="cifra-grande">{{ r.cantidad }}</b></td>
+      <td data-label="Mínimo">{{ r.minimo }}</td>
+      <td data-label="Ubicación">{{ r.ubicacion or '—' }}</td>
+      <td data-label="Estado">{% if r.cantidad <= r.minimo %}<span class="badge badge-peligro">Bajo · pedir</span>{% else %}<span class="badge badge-exito">Suficiente</span>{% endif %}</td>
+      <td class="celda-accion">
+        <div class="acciones-fila">
+          <details class="desplegable desplegable-derecha">
+            <summary class="btn btn-secundario btn-sm">{{ icono('flechas') }} Movimiento</summary>
+            <form method="post" action="{{ url_for('admin.mover', rid=r.id) }}" class="panel-flotante form-apilado">
+              <h3>{{ r.nombre }}</h3>
+              <label class="campo"><span>Cantidad</span><input type="number" name="cantidad" value="1" min="1"></label>
+              <label class="campo"><span>Motivo</span><input type="text" name="motivo" placeholder="Ej.: pedido a farmacia central"></label>
+              <div class="form-fila">
+                <button type="submit" name="accion" value="salida" class="btn btn-secundario crece">Salida</button>
+                <button type="submit" name="accion" value="entrada" class="btn btn-primario crece">Entrada</button>
+              </div>
+            </form>
+          </details>
+          <details class="desplegable desplegable-derecha">
+            <summary class="btn btn-texto btn-sm" title="Editar mínimo y ubicación">{{ icono('lapiz') }}<span class="solo-movil-txt"> Editar</span></summary>
+            <form method="post" action="{{ url_for('admin.editar_recurso', rid=r.id) }}" class="panel-flotante form-apilado">
+              <h3>{{ r.nombre }}</h3>
+              <label class="campo"><span>Mínimo</span><input type="number" name="minimo" value="{{ r.minimo }}" min="0"></label>
+              <label class="campo"><span>Ubicación</span><input type="text" name="ubicacion" value="{{ r.ubicacion }}"></label>
+              <button type="submit" class="btn btn-primario btn-bloque">Guardar</button>
+            </form>
+          </details>
+        </div>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="vacio">No hay recursos en esta vista.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  // Solo un panel abierto a la vez; se cierra al hacer clic fuera
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('details.desplegable[open]').forEach(function (d) {
+      if (!d.contains(e.target)) d.removeAttribute('open');
+    });
+  });
+</script>
+{% endblock %}

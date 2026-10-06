@@ -1,0 +1,27 @@
+{% extends "layouts/paciente.html" %}
+{% block titulo %}Agendar cita{% endblock %}
+{% block contenido %}
+<a class="volver" href="{{ url_for('portal.inicio') }}">{{ icono('atras') }} Mis citas</a>
+<div class="encabezado"><div><h1>Agendar cita virtual</h1><p class="sub">Con {{ paciente.profesional }} · atiende en el {{ horario_txt }}</p></div></div>
+{% if not horarios %}
+<div class="aviso aviso-info">{{ icono('info') }}<span>Su profesional no tiene horario de citas en este momento. Comuníquese con recepción.</span></div>
+{% endif %}
+
+<form method="post" class="tarjeta form-apilado">
+  <label class="campo"><span>Fecha</span><input type="date" name="fecha" min="{{ hoy_iso }}" value="{{ form.get('fecha', '') }}"></label>
+
+  <fieldset class="campo">
+    <legend>Hora</legend>
+    <div class="horarios">
+      {% for h in horarios %}
+      <label class="horario"><input type="radio" name="hora" value="{{ h }}" {% if form.get('hora') == h %}checked{% endif %}><span>{{ h }}</span></label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <label class="campo"><span>Motivo de la consulta</span>
+    <textarea name="motivo" rows="3" placeholder="Ej.: explicación de resultados de laboratorio">{{ form.get('motivo', '') }}</textarea>
+  </label>
+  <button type="submit" class="btn btn-primario btn-bloque">{{ icono('calendario') }} Agendar cita</button>
+</form>
+{% endblock %}

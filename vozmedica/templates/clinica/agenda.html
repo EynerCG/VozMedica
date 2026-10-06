@@ -1,0 +1,58 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Agenda del servicio{% endblock %}
+{% block contenido %}
+<div class="encabezado"><div><h1>Agenda del servicio</h1><p class="sub">Citas virtuales de todos los profesionales.</p></div></div>
+
+<div class="rejilla-agenda">
+  <section class="tarjeta">
+    <div class="tarjeta-cab"><h2>{{ icono('calendario') }} Agendar por un paciente</h2></div>
+    <form method="post" action="{{ url_for('clinica.agenda_agendar') }}" class="form-apilado">
+      <label class="campo"><span>Paciente</span>
+        <select name="documento">
+          <option value="">Seleccione…</option>
+          {% for p in pacientes %}<option value="{{ p.documento }}">{{ p.nombre }} · {{ p.documento }} — {{ p.profesional }}, {{ horario_de[p.profesional] }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="campo"><span>Fecha</span><input type="date" name="fecha" min="{{ hoy_iso }}"></label>
+      <label class="campo"><span>Hora</span>
+        <select name="hora">{% for h in horarios %}<option>{{ h }}</option>{% endfor %}</select>
+      </label>
+      <label class="campo"><span>Motivo</span><input type="text" name="motivo" placeholder="Ej.: control después del alta"></label>
+      <p class="tenue nota-pie">La cita queda con el profesional asignado al paciente y debe estar dentro de su turno.</p>
+      <button type="submit" class="btn btn-primario btn-bloque">Agendar cita</button>
+    </form>
+  </section>
+
+  <section>
+    <div class="pestanas pestanas-enlace">
+      <a class="pestana {% if ver == 'programadas' %}activa{% endif %}" href="{{ url_for('clinica.agenda') }}">Programadas</a>
+      <a class="pestana {% if ver != 'programadas' %}activa{% endif %}" href="{{ url_for('clinica.agenda', ver='todas') }}">Todas</a>
+    </div>
+    <div class="tarjeta sin-relleno">
+      <table class="tabla tabla-resp">
+        <thead><tr><th>Fecha</th><th>Paciente</th><th>Profesional</th><th>Motivo</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+        {% for c in citas %}
+        <tr>
+          <td data-label="Fecha"><b>{{ c.hora }}</b> <small class="tenue">{{ c.fecha|fecha }}</small></td>
+          <td data-label="Paciente">{{ c.paciente }}</td>
+          <td data-label="Profesional">{{ c.profesional }}</td>
+          <td data-label="Motivo">{{ c.motivo }}</td>
+          <td data-label="Estado"><span class="badge badge-{{ {'Programada': 'info', 'Atendida': 'exito', 'Cancelada': 'neutro', 'Vencida': 'alerta'}[c.estado] }}">{{ c.estado }}</span></td>
+          <td class="celda-accion">
+            {% if c.estado == 'Programada' %}
+            <form method="post" action="{{ url_for('clinica.agenda_cancelar', cid=c.id) }}" onsubmit="return confirm('¿Cancelar la cita de {{ c.paciente }}?')">
+              <button type="submit" class="btn btn-texto btn-sm">Cancelar</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="vacio">No hay citas para mostrar.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

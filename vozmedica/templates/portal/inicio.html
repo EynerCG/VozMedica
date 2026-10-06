@@ -1,0 +1,56 @@
+{% extends "layouts/paciente.html" %}
+{% block titulo %}Mis citas{% endblock %}
+{% block contenido %}
+<section class="saludo">
+  <h1>Hola, {{ paciente.nombre.split()[0] }}</h1>
+  <p class="sub">Su profesional asignado es <b>{{ paciente.profesional }}</b>.</p>
+</section>
+
+{% if proxima %}
+<section class="tarjeta proxima-cita">
+  <small class="etiqueta">Próxima cita</small>
+  <div class="proxima-fecha">
+    <span class="proxima-icono">{{ icono('calendario') }}</span>
+    <div><b>{{ proxima.fecha|fecha }}</b><span>{{ proxima.hora }} · {{ proxima.profesional }}</span></div>
+  </div>
+  <p>{{ proxima.motivo }}</p>
+  <div class="acciones-form">
+    <a class="btn btn-primario" href="{{ url_for('consulta.chat', cid=proxima.id) }}">{{ icono('video') }} Chat y videollamada</a>
+    <form method="post" action="{{ url_for('portal.cancelar_cita', cid=proxima.id) }}" onsubmit="return confirm('¿Cancelar esta cita?')">
+      <button type="submit" class="btn btn-texto">Cancelar cita</button>
+    </form>
+  </div>
+</section>
+{% else %}
+<section class="tarjeta vacio-grande">
+  <span class="vacio-icono">{{ icono('calendario') }}</span>
+  <h2>No tiene citas programadas</h2>
+  <p class="sub">Use la atención virtual para consultas cortas, por ejemplo explicación de resultados o controles, sin desplazarse al hospital.</p>
+  <a class="btn btn-primario" href="{{ url_for('portal.agendar') }}">{{ icono('mas') }} Agendar cita</a>
+</section>
+{% endif %}
+
+<div class="encabezado encabezado-sec">
+  <h2>Mis citas</h2>
+  {% if proxima %}<a class="btn btn-secundario btn-sm" href="{{ url_for('portal.agendar') }}">{{ icono('mas') }} Agendar otra</a>{% endif %}
+</div>
+<div class="lista-citas">
+  {% for c in otras %}
+  <article class="tarjeta cita {% if c.estado != 'Programada' %}cita-cerrada{% endif %}">
+    <div class="cita-fecha"><b>{{ c.hora }}</b><small>{{ c.fecha|fecha }}</small></div>
+    <div class="crece"><h3>{{ c.motivo }}</h3><p class="sub">{{ c.profesional }}</p></div>
+    <span class="badge badge-{{ {'Programada': 'info', 'Atendida': 'exito', 'Cancelada': 'neutro', 'Vencida': 'alerta'}[c.estado] }}">{{ c.estado }}</span>
+    <div class="cita-acciones">
+      {% if c.estado == 'Programada' %}
+      <a class="btn btn-secundario btn-sm" href="{{ url_for('consulta.chat', cid=c.id) }}">{{ icono('chat') }} Abrir</a>
+      <form method="post" action="{{ url_for('portal.cancelar_cita', cid=c.id) }}" onsubmit="return confirm('¿Cancelar esta cita?')"><button type="submit" class="btn btn-texto btn-sm">Cancelar</button></form>
+      {% elif c.estado == 'Atendida' %}
+      <a class="btn btn-secundario btn-sm" href="{{ url_for('consulta.chat', cid=c.id) }}">{{ icono('chat') }} Ver chat</a>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <p class="vacio">No tiene más citas.</p>
+  {% endfor %}
+</div>
+{% endblock %}

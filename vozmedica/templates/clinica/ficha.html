@@ -1,0 +1,224 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}{{ p.nombre }}{% endblock %}
+{% block contenido %}
+{% set editar = puede('editar_ficha') %}
+{% set administrar = puede('administrar_medicamentos') %}
+{% set es_medico = puede('ordenes_medicas') %}
+{% set ordenar = es_medico and nombre in (p.medico, p.cubre) %}
+{% set con_alergias = p.alergias != 'Ninguna' %}
+<a class="volver" href="{{ url_for('clinica.censo') }}">{{ icono('atras') }} Pacientes</a>
+
+<section class="tarjeta ficha-cabecera">
+  <div class="cama-grande"><small>Cama</small>{{ p.cama }}</div>
+  <div class="ficha-datos">
+    <h1>{{ p.nombre }}</h1>
+    <p class="sub">CC {{ p.documento }} · {% if p.edad is not none %}{{ p.edad }} años · {% endif %}{{ p.diagnostico or 'Sin diagnóstico registrado' }} · Día {{ p.dia }} de hospitalización</p>
+    <div class="responsables">
+      <span>Médico tratante: <b>{{ p.medico }}</b></span>
+      {% if p.cubre %}<span>Lo cubre: <b>{{ p.cubre }}</b></span>{% endif %}
+      <span>Enfermera: <b>{{ p.enfermera }}</b></span>
+    </div>
+    <div class="badges">
+      <span class="badge badge-{{ ESTADO_CLASE[p.estado] }}">{{ ESTADOS[p.estado] }}</span>
+      {% if con_alergias %}<span class="badge badge-peligro">{{ icono('alerta') }} Alergia: {{ p.alergias }}</span>
+      {% else %}<span class="badge badge-neutro">Sin alergias conocidas</span>{% endif %}
+    </div>
+  </div>
+  {% if editar %}
+  <div class="ficha-acciones">
+    <form method="post" action="{{ url_for('clinica.cambiar_estado', pid=p.id) }}">
+      <label class="campo-compacto"><span>Estado</span>
+        <select name="estado" onchange="this.form.submit()">
+          {% for k, t in ESTADOS.items() %}<option value="{{ k }}" {% if k == p.estado %}selected{% endif %}>{{ t }}</option>{% endfor %}
+        </select>
+      </label>
+      <noscript><button type="submit" class="btn btn-secundario btn-sm">Cambiar</button></noscript>
+    </form>
+    <details class="desplegable desplegable-derecha">
+      <summary class="btn btn-secundario btn-sm">{{ icono('cama') }} Cambiar de cama</summary>
+      <form method="post" action="{{ url_for('clinica.cambiar_cama', pid=p.id) }}" class="panel-flotante form-apilado">
+        <h3>Trasladar a otra cama</h3>
+        {% if camas_libres %}
+        <select name="cama">{% for c in camas_libres %}<option value="{{ c.numero }}">Cama {{ c.numero }}</option>{% endfor %}</select>
+        <button type="submit" class="btn btn-primario btn-bloque">Trasladar</button>
+        {% else %}<p class="tenue">No hay camas libres en el servicio.</p>{% endif %}
+      </form>
+    </details>
+    {% if es_medico and not ordenar %}
+    <form method="post" action="{{ url_for('clinica.asumir_paciente', pid=p.id) }}"
+          onsubmit="return confirm('¿Asumir como médico tratante de {{ p.nombre }}? Quedará registrado en las novedades.')">
+      <button type="submit" class="btn btn-secundario btn-sm">Asumir paciente</button>
+    </form>
+    {% endif %}
+    {% if ordenar %}
+    <form method="post" action="{{ url_for('clinica.dar_alta', pid=p.id) }}"
+          onsubmit="return confirm('¿Dar de alta a {{ p.nombre }}? La cama {{ p.cama }} quedará libre y se suspenderán las dosis pendientes.')">
+      <button type="submit" class="btn btn-peligro-suave btn-sm">Dar de alta</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<div class="rejilla-ficha">
+  <div class="columna">
+    <section class="tarjeta">
+      <div class="tarjeta-cab"><h2>{{ icono('pastilla') }} Medicamentos</h2></div>
+      <ul class="lista">
+        {% for m, est in meds %}
+        <li class="fila-med {% if est[1] == 'peligro' %}fila-alerta{% endif %} {% if m.estado in ('N', 'S') %}fila-cerrada{% endif %}">
+          <span class="hora">{% if m.fecha != hoy_iso %}{{ m.fecha|fecha }} · {% endif %}{{ m.hora }}</span>
+          <div class="crece">
+            <b>{{ m.nombre }}</b>
+            {% if m.registro %}<small class="tenue bloque">{{ {'A': 'Aplicó', 'N': 'Registró', 'S': 'Suspendió'}.get(m.estado, 'Registró') }}: {{ m.registro }}{% if m.motivo %} · {{ m.motivo }}{% endif %}</small>{% endif %}
+          </div>
+          <span class="badge badge-{{ est[1] }}">{{ est[0] }}</span>
+          {% if m.estado == 'P' %}
+          <div class="acciones-dosis">
+            {% if administrar and est[0] != 'Programado' %}
+            <form method="post" action="{{ url_for('clinica.registrar_medicamento', mid=m.id) }}"><button type="submit" class="btn btn-primario btn-sm">Aplicada</button></form>
+            <details class="desplegable desplegable-derecha">
+              <summary class="btn btn-secundario btn-sm">No aplicada</summary>
+              <form method="post" action="{{ url_for('clinica.no_aplicar_medicamento', mid=m.id) }}" class="panel-flotante form-apilado">
+                <h3>¿Por qué no se aplicó?</h3>
+                <select name="motivo">{% for mo in motivos_no_aplicada %}<option>{{ mo }}</option>{% endfor %}</select>
+                <input type="text" name="detalle" placeholder="Si eligió “Otro”, explique">
+                <button type="submit" class="btn btn-primario btn-bloque">Registrar</button>
+              </form>
+            </details>
+            {% endif %}
+            {% if ordenar %}
+            <details class="desplegable desplegable-derecha">
+              <summary class="btn btn-texto btn-sm" title="Suspender esta dosis y las siguientes de este medicamento">Suspender</summary>
+              <form method="post" action="{{ url_for('clinica.suspender_medicamento', mid=m.id) }}" class="panel-flotante form-apilado">
+                <h3>Suspender {{ m.nombre }}</h3>
+                <p class="tenue">Se suspenden esta dosis y las siguientes pendientes.</p>
+                <input type="text" name="motivo" placeholder="Motivo (opcional)">
+                <button type="submit" class="btn btn-peligro-suave btn-bloque">Suspender orden</button>
+              </form>
+            </details>
+            {% endif %}
+          </div>
+          {% endif %}
+        </li>
+        {% else %}
+        <li class="vacio">Sin medicamentos formulados.</li>
+        {% endfor %}
+      </ul>
+      {% if ordenar %}
+      <form method="post" action="{{ url_for('clinica.agregar_medicamento', pid=p.id) }}" class="pie-tarjeta form-formular">
+        <h3 class="subtitulo">Formular</h3>
+        <div class="form-fila">
+          <label class="campo crece"><span>Medicamento, dosis y vía</span><input type="text" name="nombre" placeholder="Ej.: Dipirona 1 g IV"></label>
+        </div>
+        <div class="form-fila">
+          <label class="campo campo-fecha"><span>Primera dosis</span><input type="date" name="fecha" value="{{ hoy_iso }}" min="{{ hoy_iso }}"></label>
+          <label class="campo campo-hora"><span>Hora</span><input type="time" name="hora"></label>
+          <label class="campo"><span>Repetir</span>
+            <select name="repetir">{% for f in frecuencias %}<option value="{{ f }}">{{ 'Dosis única' if f == 0 else 'Cada %d h' % f }}</option>{% endfor %}</select>
+          </label>
+          <label class="campo"><span>Durante</span>
+            <select name="dias">{% for d in range(1, max_dias + 1) %}<option value="{{ d }}">{{ d }} día{{ 's' if d > 1 }}</option>{% endfor %}</select>
+          </label>
+        </div>
+        {% if con_alergias %}
+        <label class="check-alergia"><input type="checkbox" name="confirmar_alergia" value="1">
+          Confirmo que revisé la alergia a {{ p.alergias }} (solo si el medicamento la puede causar)</label>
+        {% endif %}
+        <div class="acciones-form"><button type="submit" class="btn btn-secundario">{{ icono('mas') }} Formular</button></div>
+      </form>
+      {% endif %}
+      {% if es_medico and not ordenar %}<p class="tenue nota-pie">Formulan {{ p.medico }} (tratante){% if p.cubre %} y {{ p.cubre }} (lo cubre){% endif %}. Para recibirlo use la entrega de turno; “Asumir paciente” es un traslado definitivo.</p>
+      {% elif administrar %}<p class="tenue nota-pie">Los medicamentos los formula el médico tratante. Cada dosis se registra como aplicada o no aplicada desde 30 minutos antes de su hora.</p>{% endif %}
+    </section>
+
+    <section class="tarjeta">
+      <div class="tarjeta-cab"><h2>{{ icono('nota') }} Novedades</h2></div>
+      {% if editar %}
+      <form method="post" action="{{ url_for('clinica.agregar_novedad', pid=p.id) }}" class="form-novedad">
+        <textarea name="texto" rows="2" placeholder="Escriba una novedad del paciente…"></textarea>
+        <button type="submit" class="btn btn-primario btn-sm">Guardar novedad</button>
+      </form>
+      {% endif %}
+      <ol class="linea-tiempo">
+        {% for n in nov %}
+        <li><span class="hora">{% if n.fecha != hoy_iso %}{{ n.fecha|fecha }} · {% endif %}{{ n.hora }}</span><div><p>{{ n.texto }}</p><small class="tenue">{{ n.autor }}</small></div></li>
+        {% else %}
+        <li class="vacio">Sin novedades.</li>
+        {% endfor %}
+      </ol>
+    </section>
+  </div>
+
+  <div class="columna">
+    <section class="tarjeta">
+      <div class="tarjeta-cab"><h2>{{ icono('pulso') }} Signos vitales</h2></div>
+      {% if signos %}
+      <p class="signos">{{ signos[0].texto }}<small class="tenue bloque">{% if signos[0].fecha != hoy_iso %}{{ signos[0].fecha|fecha }} · {% endif %}{{ signos[0].hora }} · {{ signos[0].autor }}</small></p>
+      {% else %}<p class="tenue">Sin registros de signos vitales.</p>{% endif %}
+      {% if editar %}
+      <form method="post" action="{{ url_for('clinica.actualizar_signos', pid=p.id) }}" class="form-apilado">
+        <input type="text" name="signos" placeholder="PA 120/80 - FC 80 - FR 18 - T 36.5 - SatO2 95%">
+        <button type="submit" class="btn btn-secundario btn-sm">Registrar signos</button>
+      </form>
+      {% endif %}
+      {% if signos|length > 1 %}
+      <details class="historial-signos">
+        <summary>Registros anteriores ({{ signos|length - 1 }})</summary>
+        <ul class="lista">
+          {% for s in signos[1:] %}
+          <li><span class="hora">{% if s.fecha != hoy_iso %}{{ s.fecha|fecha }} · {% endif %}{{ s.hora }}</span> {{ s.texto }} <small class="tenue">· {{ s.autor }}</small></li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+    </section>
+
+    {% if notas_entrega %}
+    <section class="tarjeta">
+      <div class="tarjeta-cab"><h2>{{ icono('turno') }} Última entrega de turno</h2></div>
+      <ul class="lista notas-entrega">
+        {% for n in notas_entrega %}
+        <li><b>{{ 'Médica' if n.tipo == 'medica' else 'Enfermería' }}</b> · {{ n.turno }} · {{ n.entrega }} → {{ n.recibe }}
+          ({{ n.estado|lower }}){% if n.nota %}<span class="nota-entrega bloque">“{{ n.nota }}”</span>{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <section class="tarjeta">
+      <div class="tarjeta-cab"><h2>{{ icono('lista') }} Pendientes</h2></div>
+      <ul class="lista lista-pendientes">
+        {% for d in pend %}
+        <li class="{% if d.hecho %}hecho{% endif %}">
+          {% if editar %}
+          <form method="post" action="{{ url_for('clinica.marcar_pendiente', did=d.id) }}">
+            <button type="submit" class="casilla {% if d.hecho %}marcada{% endif %}" aria-label="{{ 'Desmarcar' if d.hecho else 'Marcar como hecho' }}" title="{{ 'Desmarcar' if d.hecho else 'Marcar como hecho' }}">{% if d.hecho %}{{ icono('visto') }}{% endif %}</button>
+          </form>
+          {% endif %}
+          <div class="crece"><span>{{ d.texto }}</span>{% if d.hecho and d.hecho_por %}<small class="tenue bloque">Cumplido por {{ d.hecho_por }}</small>{% endif %}</div>
+        </li>
+        {% else %}
+        <li class="vacio">Sin pendientes.</li>
+        {% endfor %}
+      </ul>
+      {% if editar %}
+      <form method="post" action="{{ url_for('clinica.agregar_pendiente', pid=p.id) }}" class="pie-tarjeta form-fila">
+        <input type="text" name="texto" class="crece" placeholder="Nuevo pendiente">
+        <button type="submit" class="btn btn-secundario">{{ icono('mas') }} Agregar</button>
+      </form>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  // Solo un panel abierto a la vez; se cierra al hacer clic fuera
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('details.desplegable[open]').forEach(function (d) {
+      if (!d.contains(e.target)) d.removeAttribute('open');
+    });
+  });
+</script>
+{% endblock %}

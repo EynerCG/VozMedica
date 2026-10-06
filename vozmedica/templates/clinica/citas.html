@@ -1,0 +1,30 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Mis citas virtuales{% endblock %}
+{% block contenido %}
+<div class="encabezado"><div><h1>Mis citas virtuales</h1><p class="sub">{{ nombre }} · Atienda por chat o videollamada.</p></div></div>
+
+<div class="lista-citas">
+  {% for c in citas %}
+  <article class="tarjeta cita {% if c.estado != 'Programada' %}cita-cerrada{% endif %}">
+    <div class="cita-fecha"><b>{{ c.hora }}</b><small>{{ c.fecha|fecha }}</small></div>
+    <div class="crece">
+      <h3>{{ c.paciente }}</h3>
+      <p class="sub">{{ c.motivo }}</p>
+    </div>
+    <span class="badge badge-{{ {'Programada': 'info', 'Atendida': 'exito', 'Cancelada': 'neutro', 'Vencida': 'alerta'}[c.estado] }}">{{ c.estado }}</span>
+    <div class="cita-acciones">
+      {% if c.estado != 'Cancelada' %}<a class="btn btn-secundario btn-sm" href="{{ url_for('consulta.chat', cid=c.id) }}">{{ icono('chat') }} {{ 'Abrir consulta' if c.estado == 'Programada' else 'Ver chat' }}</a>{% endif %}
+      {% if c.estado == 'Programada' %}
+      <form method="post" action="{{ url_for('clinica.cita_atendida', cid=c.id) }}"><button type="submit" class="btn btn-primario btn-sm">{{ icono('check') }} Marcar atendida</button></form>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <div class="tarjeta vacio-grande">
+    <span class="vacio-icono">{{ icono('calendario') }}</span>
+    <h2>No tiene citas asignadas</h2>
+    <p class="sub">Cuando un paciente agende con usted, la cita aparecerá aquí.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

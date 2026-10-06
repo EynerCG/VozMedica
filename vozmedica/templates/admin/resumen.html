@@ -1,0 +1,63 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Resumen{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div><h1>Resumen del inventario</h1><p class="sub">Medicina Interna · Piso 2</p></div>
+  <a class="btn btn-primario" href="{{ url_for('admin.recursos') }}">{{ icono('paquete') }} Ir al inventario</a>
+</div>
+
+<div class="kpis">
+  <a class="kpi {% if kpi.bajos %}kpi-alerta{% endif %}" href="{{ url_for('admin.recursos', bajos=1) }}"><span class="kpi-icono">{{ icono('alerta') }}</span><div><small>Bajo el mínimo</small><b>{{ kpi.bajos }}</b></div></a>
+  <div class="kpi"><span class="kpi-icono">{{ icono('cama') }}</span><div><small>Camas libres</small><b>{{ kpi.camas }}</b></div></div>
+  <a class="kpi {% if kpi.solicitudes %}kpi-alerta{% endif %}" href="{{ url_for('admin.solicitudes') }}"><span class="kpi-icono">{{ icono('bandeja') }}</span><div><small>Solicitudes abiertas</small><b>{{ kpi.solicitudes }}</b></div></a>
+  <a class="kpi" href="{{ url_for('admin.movimientos') }}"><span class="kpi-icono">{{ icono('flechas') }}</span><div><small>Movimientos hoy</small><b>{{ kpi.mov_hoy }}</b></div></a>
+</div>
+
+<div class="rejilla-2">
+  <section class="tarjeta">
+    <div class="tarjeta-cab"><h2>{{ icono('alerta') }} Pedir ya</h2><a class="enlace" href="{{ url_for('admin.recursos', bajos=1) }}">Ver todos</a></div>
+    <ul class="lista">
+      {% for r in bajos %}
+      <li class="fila-recurso">
+        <div class="crece"><b>{{ r.nombre }}</b><small class="tenue bloque">{{ r.tipo }} · {{ r.ubicacion }}</small></div>
+        <div class="medidor" title="{{ r.cantidad }} de {{ r.minimo }} mínimo">
+          <span style="width: {{ [100, (r.cantidad * 100 // (r.minimo or 1))]|min }}%"></span>
+        </div>
+        <span class="cifra"><b>{{ r.cantidad }}</b> / {{ r.minimo }}</span>
+      </li>
+      {% else %}
+      <li class="vacio">{{ icono('check') }} Todo el inventario está sobre el mínimo.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="tarjeta">
+    <div class="tarjeta-cab"><h2>{{ icono('bandeja') }} Solicitudes de enfermería</h2><a class="enlace" href="{{ url_for('admin.solicitudes') }}">Ver todas</a></div>
+    <ul class="lista">
+      {% for s in solicitudes %}
+      <li class="fila-recurso">
+        <div class="crece"><b>{{ s.nombre }}</b><small class="tenue bloque">{{ s.usuario }} · {{ s.fecha }}{% if s.nota %} · “{{ s.nota }}”{% endif %}</small></div>
+        <form method="post" action="{{ url_for('admin.solicitud_atendida', sid=s.id) }}"><button type="submit" class="btn btn-secundario btn-sm">Atendida</button></form>
+      </li>
+      {% else %}
+      <li class="vacio">No hay solicitudes abiertas.</li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+
+<section class="tarjeta">
+  <div class="tarjeta-cab"><h2>{{ icono('flechas') }} Últimos movimientos</h2><a class="enlace" href="{{ url_for('admin.movimientos') }}">Ver historial</a></div>
+  <ul class="lista">
+    {% for m in movimientos %}
+    <li class="fila-recurso">
+      <span class="badge badge-{{ 'exito' if m.cambio > 0 else 'neutro' }}">{{ '%+d' % m.cambio }}</span>
+      <div class="crece"><b>{{ m.nombre }}</b><small class="tenue bloque">{{ m.motivo }} · {{ m.usuario }}</small></div>
+      <small class="tenue">{{ m.fecha }}</small>
+    </li>
+    {% else %}
+    <li class="vacio">Todavía no hay movimientos.</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

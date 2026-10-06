@@ -1,0 +1,51 @@
+{% extends "layouts/paciente.html" if rol == 'paciente' else "layouts/personal.html" %}
+{% block titulo %}Consulta virtual{% endblock %}
+{% block contenido %}
+<a class="volver" href="{{ url_for('portal.inicio' if rol == 'paciente' else 'clinica.citas') }}">{{ icono('atras') }} {{ 'Mis citas' if rol == 'paciente' else 'Mis citas virtuales' }}</a>
+
+<section class="tarjeta consulta-cab">
+  <div class="crece">
+    <h1>{{ c.profesional if rol == 'paciente' else c.paciente }}</h1>
+    <p class="sub">{{ c.fecha|fecha }} · {{ c.hora }} · {{ c.motivo }}</p>
+  </div>
+  <span class="badge badge-{{ {'Programada': 'info', 'Atendida': 'exito', 'Cancelada': 'neutro', 'Vencida': 'alerta'}[c.estado] }}">{{ c.estado }}</span>
+  {% if c.estado == 'Programada' %}
+  <a class="btn btn-primario" href="https://meet.jit.si/{{ c.sala }}" target="_blank" rel="noopener">{{ icono('video') }} Entrar a la videollamada</a>
+  {% endif %}
+</section>
+
+<section class="tarjeta chat">
+  <div class="chat-mensajes" id="mensajes">
+    {% for m in mensajes %}
+    <div class="burbuja {% if m.autor == nombre %}propia{% endif %}">
+      <small>{{ m.autor }} · {{ m.hora }}</small>
+      <p>{{ m.texto }}</p>
+    </div>
+    {% else %}
+    <p class="vacio">Todavía no hay mensajes. Escriba el primero.</p>
+    {% endfor %}
+  </div>
+  {% if c.estado == 'Programada' %}
+  <form method="post" action="{{ url_for('consulta.enviar_mensaje', cid=c.id) }}" class="chat-escribir">
+    <input type="text" name="texto" id="texto" placeholder="Escriba un mensaje…" autocomplete="off" autofocus>
+    <button type="submit" class="btn btn-primario" aria-label="Enviar">{{ icono('enviar') }}</button>
+  </form>
+  {% else %}
+  <p class="chat-cerrado">La cita está {{ c.estado|lower }}; el chat queda de solo lectura.</p>
+  {% endif %}
+</section>
+{% if c.estado == 'Programada' %}<p class="tenue nota-pie">Los mensajes nuevos aparecen solos cada 15 segundos.</p>{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+  (function () {
+    var caja = document.getElementById('mensajes');
+    caja.scrollTop = caja.scrollHeight;
+    // Recarga cada 15 s para ver mensajes nuevos, pero no si la persona esta escribiendo
+    setInterval(function () {
+      var campo = document.getElementById('texto');
+      if (campo && campo.value === '') location.reload();   // en citas cerradas no recarga
+    }, 15000);
+  })();
+</script>
+{% endblock %}

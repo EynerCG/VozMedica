@@ -1,0 +1,73 @@
+{% extends "layouts/base.html" %}
+{% block titulo %}Ingreso{% endblock %}
+{% block clase_body %}pantalla-ingreso{% endblock %}
+{% block cuerpo %}
+<div class="ingreso">
+  <section class="ingreso-marca">
+    <div class="marca marca-clara"><span class="marca-logo">{{ icono('logo') }}</span><div><b>VozMédica</b><small>Hospital · Medicina Interna</small></div></div>
+    <div class="ingreso-lema">
+      <h1>Gestión inteligente,<br>salud comprensible.</h1>
+      <p>Seguimiento de pacientes, entrega de turno, recursos hospitalarios y atención virtual en una sola plataforma.</p>
+    </div>
+    <ul class="ingreso-puntos">
+      <li>{{ icono('pacientes') }} Censo y ficha clínica al día</li>
+      <li>{{ icono('paquete') }} Inventario con alertas de reabastecimiento</li>
+      <li>{{ icono('video') }} Citas virtuales con chat y videollamada</li>
+    </ul>
+  </section>
+
+  <section class="ingreso-formularios">
+    <div class="ingreso-caja">
+      <h2>Ingresar</h2>
+      <p class="sub">Elija el portal que le corresponde.</p>
+      {% include "layouts/_avisos.html" %}
+
+      <div class="portales">
+        <form method="post" class="tarjeta portal-op">
+          <input type="hidden" name="tipo" value="personal">
+          <div class="portal-cab"><span class="portal-icono">{{ icono('pulso') }}</span><div><h3>Personal clínico</h3><small>Enfermería, médicos y recepción</small></div></div>
+          <label class="campo"><span>Su nombre</span>
+            <select name="personal_id">
+              <option value="">Seleccione…</option>
+              {% for grupo, gente in clinicos %}
+              <optgroup label="{{ grupo }}">
+                {% for p in gente %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+              </optgroup>
+              {% endfor %}
+            </select>
+          </label>
+          <button type="submit" class="btn btn-primario btn-bloque">Entrar al portal clínico</button>
+        </form>
+
+        <form method="post" class="tarjeta portal-op portal-op-admin">
+          <input type="hidden" name="tipo" value="personal">
+          <div class="portal-cab"><span class="portal-icono">{{ icono('escudo') }}</span><div><h3>Administración</h3><small>Inventario, personal y permisos</small></div></div>
+          <label class="campo"><span>Su nombre</span>
+            <select name="personal_id">
+              <option value="">Seleccione…</option>
+              {% for p in admins %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+            </select>
+          </label>
+          <button type="submit" class="btn btn-admin btn-bloque">Entrar a administración</button>
+        </form>
+
+        <form method="post" class="tarjeta portal-op">
+          <input type="hidden" name="tipo" value="paciente">
+          <div class="portal-cab"><span class="portal-icono">{{ icono('usuario') }}</span><div><h3>Pacientes</h3><small>Citas virtuales con su profesional</small></div></div>
+          <label class="campo"><span>Número de documento</span>
+            <input type="text" name="documento" inputmode="numeric" autocomplete="off" placeholder="Ej.: 1001">
+          </label>
+          <button type="submit" class="btn btn-secundario btn-bloque">Entrar como paciente</button>
+          <small class="tenue">Documentos de prueba: 1001, 1002 o 1003.</small>
+        </form>
+      </div>
+
+      <form method="post" action="{{ url_for('auth.reiniciar') }}" class="reiniciar"
+            onsubmit="return confirm('Esto borra los cambios y vuelve a cargar los datos de prueba. ¿Continuar?')">
+        <button type="submit" class="btn btn-texto btn-sm">{{ icono('cambiar') }} Reiniciar datos de prueba</button>
+        <span class="tenue">Versión 1.0 · Datos ficticios</span>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

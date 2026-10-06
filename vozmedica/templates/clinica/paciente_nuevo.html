@@ -1,0 +1,45 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Registrar paciente{% endblock %}
+{% block contenido %}
+<a class="volver" href="{{ url_for('clinica.censo') }}">{{ icono('atras') }} Pacientes</a>
+<div class="encabezado"><div><h1>Registrar paciente</h1><p class="sub">Solo aparecen las camas libres del servicio ({{ camas|length }} disponible{{ 's' if camas|length != 1 }}).</p></div></div>
+{% if not camas %}
+<div class="tarjeta vacio-grande">
+  <span class="vacio-icono">{{ icono('cama') }}</span>
+  <h2>No hay camas disponibles</h2>
+  <p class="sub">Todas las camas del servicio están ocupadas. Cuando se dé de alta a un paciente, su cama aparecerá aquí.</p>
+  <a class="btn btn-secundario" href="{{ url_for('clinica.censo') }}">Volver a pacientes</a>
+</div>
+{% else %}
+<form method="post" class="tarjeta form-rejilla">
+  <label class="campo"><span>Cama *</span>
+    <select name="cama">
+      <option value="">Seleccione…</option>
+      {% for c in camas %}<option value="{{ c.numero }}" {% if form.get('cama') == c.numero %}selected{% endif %}>Cama {{ c.numero }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="campo"><span>Documento *</span><input type="text" name="documento" inputmode="numeric" value="{{ form.get('documento', '') }}"></label>
+  <label class="campo"><span>Nombre completo *</span><input type="text" name="nombre" value="{{ form.get('nombre', '') }}"></label>
+  <label class="campo"><span>Médico tratante *</span>
+    <select name="medico">
+      <option value="">Seleccione…</option>
+      {% for m in medicos %}<option {% if form.get('medico') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="campo"><span>Enfermera a cargo (turno actual) *</span>
+    <select name="enfermera">
+      <option value="">Seleccione…</option>
+      {% for e in enfermeras %}<option {% if form.get('enfermera') == e %}selected{% endif %}>{{ e }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="campo"><span>Edad *</span><input type="number" name="edad" min="0" max="120" value="{{ form.get('edad', '') }}"></label>
+  <label class="campo ancho-2"><span>Diagnóstico de ingreso *</span><input type="text" name="diagnostico" value="{{ form.get('diagnostico', '') }}"></label>
+  <label class="campo ancho-3"><span>Alergias</span><input type="text" name="alergias" value="{{ form.get('alergias', '') }}" placeholder="Ninguna"></label>
+  <label class="campo ancho-3"><span>Signos vitales de ingreso</span><input type="text" name="signos" value="{{ form.get('signos', '') }}" placeholder="PA - FC - FR - T - SatO2"></label>
+  <div class="ancho-3 acciones-form">
+    <a class="btn btn-secundario" href="{{ url_for('clinica.censo') }}">Cancelar</a>
+    <button type="submit" class="btn btn-primario">Registrar paciente</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

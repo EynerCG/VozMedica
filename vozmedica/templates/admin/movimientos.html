@@ -1,0 +1,33 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Movimientos{% endblock %}
+{% block contenido %}
+<div class="encabezado"><div><h1>Movimientos de inventario</h1><p class="sub">Entradas, salidas y usos registrados por el personal.</p></div></div>
+
+<div class="barra-filtros">
+  <div class="pestanas pestanas-enlace">
+    <a class="pestana {% if not tipo %}activa{% endif %}" href="{{ url_for('admin.movimientos') }}">Todos</a>
+    {% for clave, texto in tipos %}
+    <a class="pestana {% if tipo == clave %}activa{% endif %}" href="{{ url_for('admin.movimientos', tipo=clave) }}">{{ texto }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="tarjeta sin-relleno">
+  <table class="tabla tabla-resp">
+    <thead><tr><th>Fecha</th><th>Recurso</th><th>Cambio</th><th>Motivo</th><th>Usuario</th></tr></thead>
+    <tbody>
+    {% for m in movimientos %}
+    <tr>
+      <td data-label="Fecha">{{ m.fecha }}</td>
+      <td data-label="Recurso"><b>{{ m.nombre }}</b><small class="tenue bloque">{{ m.tipo }}</small></td>
+      <td data-label="Cambio"><span class="badge badge-{{ 'exito' if m.cambio > 0 else 'neutro' }}">{{ '%+d' % m.cambio }}</span></td>
+      <td data-label="Motivo">{{ m.motivo }}</td>
+      <td data-label="Usuario">{{ m.usuario }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="vacio">Todavía no hay movimientos.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

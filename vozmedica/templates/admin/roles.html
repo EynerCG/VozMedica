@@ -1,0 +1,43 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Roles y permisos{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div><h1>Roles y permisos</h1><p class="sub">Marque qué puede ver y hacer cada rol. Los cambios aplican de inmediato a todos los empleados del rol.</p></div>
+</div>
+
+<form method="post" class="tarjeta sin-relleno">
+  <div class="tabla-scroll">
+    <table class="tabla matriz">
+      <thead>
+        <tr>
+          <th>Permiso</th>
+          {% for r in roles %}<th class="centro">{{ r.nombre }}<small class="tenue bloque">{{ cuantos[r.clave] }} empleado{{ 's' if cuantos[r.clave] != 1 }}</small></th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for grupo, permisos in grupos %}
+        <tr class="fila-grupo"><td colspan="{{ roles|length + 1 }}">{{ grupo }}</td></tr>
+        {% for clave, nombre_p, descripcion in permisos %}
+        <tr>
+          <td><b>{{ nombre_p }}</b><small class="tenue bloque">{{ descripcion }}</small></td>
+          {% for r in roles %}
+          {% set fijo = r.clave == 'admin' and clave == 'admin_personal' %}
+          <td class="centro">
+            <label class="interruptor" title="{{ 'Siempre activo para Administración' if fijo else r.nombre + ': ' + nombre_p }}">
+              <input type="checkbox" name="{{ r.clave }}:{{ clave }}" {% if (r.clave, clave) in actuales or fijo %}checked{% endif %} {% if fijo %}disabled{% endif %}>
+              <span></span>
+            </label>
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="pie-tarjeta acciones-form">
+    <span class="tenue">Administración siempre conserva el acceso a Personal para que nadie quede por fuera.</span>
+    <button type="submit" class="btn btn-primario">{{ icono('check') }} Guardar permisos</button>
+  </div>
+</form>
+{% endblock %}

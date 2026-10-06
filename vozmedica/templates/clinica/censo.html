@@ -1,0 +1,54 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Pacientes{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div><h1>Pacientes hospitalizados</h1><p class="sub">Medicina Interna · Piso 2</p></div>
+  {% if puede('editar_ficha') %}
+  <a class="btn btn-primario" href="{{ url_for('clinica.registrar_paciente') }}">{{ icono('mas') }} Registrar paciente</a>
+  {% endif %}
+</div>
+
+{% if con_pacientes %}
+<div class="pestanas pestanas-enlace">
+  <a class="pestana {% if mios %}activa{% endif %}" href="{{ url_for('clinica.censo', ver='mios') }}">Mis pacientes <span class="contador-tab">{{ total_mios }}</span></a>
+  <a class="pestana {% if not mios %}activa{% endif %}" href="{{ url_for('clinica.censo', ver='todos') }}">Todo el servicio <span class="contador-tab">{{ total }}</span></a>
+</div>
+{% endif %}
+
+<div class="kpis">
+  <div class="kpi"><span class="kpi-icono">{{ icono('pacientes') }}</span><div><small>Pacientes</small><b>{{ resumen.pacientes }}</b></div></div>
+  <div class="kpi {% if resumen.atrasados %}kpi-peligro{% endif %}"><span class="kpi-icono">{{ icono('pastilla') }}</span><div><small>Medicamentos atrasados</small><b>{{ resumen.atrasados }}</b></div></div>
+  <div class="kpi {% if resumen.criticos %}kpi-peligro{% endif %}"><span class="kpi-icono">{{ icono('pulso') }}</span><div><small>Estado crítico</small><b>{{ resumen.criticos }}</b></div></div>
+  <div class="kpi"><span class="kpi-icono">{{ icono('lista') }}</span><div><small>Pendientes abiertos</small><b>{{ resumen.pendientes }}</b></div></div>
+</div>
+
+<div class="tarjeta sin-relleno">
+  <table class="tabla tabla-resp">
+    <thead><tr><th>Cama</th><th>Paciente</th><th>Diagnóstico</th><th>Responsables</th><th>Estado</th><th>Medicamentos</th><th>Pendientes</th><th></th></tr></thead>
+    <tbody>
+    {% for f in lista %}{% set p = f.p %}
+    <tr>
+      <td data-label="Cama"><span class="cama">{{ p.cama }}</span></td>
+      <td data-label="Paciente">
+        <b>{{ p.nombre }}</b>
+        <small class="tenue bloque">{% if p.edad is not none %}{{ p.edad }} años · {% endif %}día {{ p.dia }}</small>
+        {% if p.alergias != 'Ninguna' %}<span class="badge badge-peligro">{{ icono('alerta') }} Alergia: {{ p.alergias }}</span>{% endif %}
+      </td>
+      <td data-label="Diagnóstico">{{ p.diagnostico }}</td>
+      <td data-label="Responsables">
+        <span class="bloque">{{ p.cubre or p.medico }}</span>
+        {% if p.cubre %}<small class="tenue bloque">Cubre a {{ p.medico }}</small>{% endif %}
+        <small class="tenue bloque">{{ p.enfermera }}</small>
+      </td>
+      <td data-label="Estado"><span class="badge badge-{{ ESTADO_CLASE[p.estado] }}">{{ ESTADOS[p.estado] }}</span></td>
+      <td data-label="Medicamentos">{% if f.atrasados %}<span class="badge badge-peligro">{{ f.atrasados }} atrasado{{ 's' if f.atrasados > 1 }}</span>{% else %}<span class="tenue">Al día</span>{% endif %}</td>
+      <td data-label="Pendientes">{{ f.pendientes or '—' }}</td>
+      <td class="celda-accion">{% if puede('ver_ficha') %}<a class="btn btn-secundario btn-sm" href="{{ url_for('clinica.ficha', pid=p.id) }}">Ver ficha</a>{% endif %}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="vacio">{% if mios %}No tiene pacientes a su cargo en este momento. Revise <a class="enlace" href="{{ url_for('clinica.censo', ver='todos') }}">todo el servicio</a>.{% else %}No hay pacientes hospitalizados.{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

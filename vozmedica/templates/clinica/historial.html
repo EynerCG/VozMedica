@@ -1,0 +1,26 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Historial de turnos{% endblock %}
+{% block contenido %}
+<div class="encabezado"><div><h1>Historial de entregas de turno</h1><p class="sub">Cada entrega con quién entregó, quién recibió y cuándo lo confirmó.</p></div></div>
+<div class="tarjeta sin-relleno">
+  <table class="tabla tabla-resp">
+    <thead><tr><th>Fecha</th><th>Tipo</th><th>Turno</th><th>Entrega</th><th>Recibe</th><th>Pacientes</th><th>Estado</th><th>Observaciones</th></tr></thead>
+    <tbody>
+    {% for e in entregas %}
+    <tr>
+      <td data-label="Fecha"><b>{{ e.fecha }}</b> <small class="tenue">{{ e.hora }}</small></td>
+      <td data-label="Tipo"><span class="badge badge-{{ 'info' if e.tipo == 'medica' else 'neutro' }}">{{ 'Médica' if e.tipo == 'medica' else 'Enfermería' }}</span></td>
+      <td data-label="Turno">{{ e.turno }}</td>
+      <td data-label="Entrega">{{ e.entrega }}</td>
+      <td data-label="Recibe">{{ e.recibe }}{% if e.recibida %} <small class="tenue">({{ e.recibida }})</small>{% endif %}</td>
+      <td data-label="Pacientes">{{ e.pacientes }}</td>
+      <td data-label="Estado"><span class="badge badge-{{ 'exito' if e.estado == 'Recibida' else 'alerta' }}">{{ e.estado }}</span></td>
+      <td data-label="Observaciones">{{ e.observaciones }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="vacio">Todavía no hay entregas registradas.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

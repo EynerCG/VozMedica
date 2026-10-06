@@ -1,0 +1,29 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Solicitudes{% endblock %}
+{% block contenido %}
+<div class="encabezado"><div><h1>Solicitudes de enfermería</h1><p class="sub">Faltantes reportados desde el portal clínico. Al registrar una entrada del recurso, la solicitud se cierra sola.</p></div></div>
+
+<div class="tarjeta sin-relleno">
+  <table class="tabla tabla-resp">
+    <thead><tr><th>Recurso</th><th>Disponible</th><th>Reportó</th><th>Nota</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+    {% for s in solicitudes %}
+    <tr>
+      <td data-label="Recurso"><b>{{ s.nombre }}</b><small class="tenue bloque">{{ s.fecha }}</small></td>
+      <td data-label="Disponible">{{ s.cantidad }} <small class="tenue">(mín. {{ s.minimo }})</small></td>
+      <td data-label="Reportó">{{ s.usuario }}</td>
+      <td data-label="Nota">{{ s.nota or '—' }}</td>
+      <td data-label="Estado"><span class="badge badge-{{ 'alerta' if s.estado == 'Abierta' else 'exito' }}">{{ s.estado }}</span></td>
+      <td class="celda-accion">
+        {% if s.estado == 'Abierta' %}
+        <form method="post" action="{{ url_for('admin.solicitud_atendida', sid=s.id) }}"><button type="submit" class="btn btn-secundario btn-sm">{{ icono('check') }} Marcar atendida</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="vacio">No hay solicitudes.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

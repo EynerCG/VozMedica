@@ -1,0 +1,10 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Sin acceso{% endblock %}
+{% block contenido %}
+<div class="tarjeta vacio-grande">
+  <span class="vacio-icono">{{ icono('candado') }}</span>
+  <h1>Su rol todavía no tiene secciones asignadas</h1>
+  <p class="sub">Pida a administración que le asigne permisos en <b>Roles y permisos</b>.</p>
+  <a class="btn btn-secundario" href="{{ url_for('auth.salir') }}">{{ icono('salir') }} Cerrar sesión</a>
+</div>
+{% endblock %}

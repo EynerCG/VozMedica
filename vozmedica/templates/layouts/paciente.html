@@ -1,0 +1,26 @@
+{% extends "layouts/base.html" %}
+{% block clase_body %}app-paciente{% endblock %}
+{% block cuerpo %}
+<header class="barra-paciente">
+  <div class="barra-paciente-int">
+    <a class="marca" href="{{ url_for('portal.inicio') }}"><span class="marca-logo">{{ icono('logo') }}</span><div><b>VozMédica</b><small>Mi salud</small></div></a>
+    <nav class="menu-paciente ocultar-movil">
+      <a href="{{ url_for('portal.inicio') }}" class="{% if request.endpoint == 'portal.inicio' %}activo{% endif %}">Mis citas</a>
+      <a href="{{ url_for('portal.agendar') }}" class="{% if request.endpoint == 'portal.agendar' %}activo{% endif %}">Agendar cita</a>
+    </nav>
+    <div class="usuario-movil">
+      <span class="avatar avatar-sm" title="{{ nombre }}">{{ iniciales(nombre) }}</span>
+      <a href="{{ url_for('auth.salir') }}" class="icono-btn" title="Cerrar sesión" aria-label="Cerrar sesión">{{ icono('salir') }}</a>
+    </div>
+  </div>
+</header>
+<main class="pagina pagina-estrecha">
+  {% include "layouts/_avisos.html" %}
+  {% block contenido %}{% endblock %}
+</main>
+<nav class="menu-inferior" aria-label="Menú">
+  <a href="{{ url_for('portal.inicio') }}" class="{% if request.endpoint == 'portal.inicio' %}activo{% endif %}">{{ icono('inicio') }}<span>Mis citas</span></a>
+  <a href="{{ url_for('portal.agendar') }}" class="{% if request.endpoint == 'portal.agendar' %}activo{% endif %}">{{ icono('calendario') }}<span>Agendar</span></a>
+  <a href="{{ url_for('auth.salir') }}">{{ icono('salir') }}<span>Salir</span></a>
+</nav>
+{% endblock %}

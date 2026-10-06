@@ -1,0 +1,67 @@
+{% extends "layouts/base.html" %}
+{% block clase_body %}app portal-{{ portal }}{% endblock %}
+{% block cuerpo %}
+<aside class="lateral">
+  <div class="marca">
+    <span class="marca-logo">{{ icono('logo') }}</span>
+    <div><b>VozMédica</b><small>{{ 'Administración' if portal == 'admin' else 'Portal clínico' }}</small></div>
+  </div>
+  <nav class="menu-lateral" aria-label="Menú principal">
+    {% for ruta, texto, corto, ic in menu %}
+    <a href="{{ url_for(ruta) }}" class="{% if activo == ruta %}activo{% endif %}">
+      {{ icono(ic) }}<span>{{ texto }}</span>
+      {% if ruta == 'admin.recursos' and alertas_recursos %}<span class="contador" title="Recursos bajo el mínimo">{{ alertas_recursos }}</span>{% endif %}
+      {% if ruta == 'admin.solicitudes' and solicitudes_abiertas %}<span class="contador" title="Solicitudes abiertas">{{ solicitudes_abiertas }}</span>{% endif %}
+    </a>
+    {% endfor %}
+  </nav>
+  {% if otro_portal %}
+  <a class="cambiar-portal" href="{{ otro_portal }}">{{ icono('cambiar') }} Ir a {{ 'Portal clínico' if portal == 'admin' else 'Administración' }}</a>
+  {% endif %}
+  <div class="usuario-lateral">
+    <span class="avatar">{{ iniciales(nombre) }}</span>
+    <div class="usuario-datos"><b>{{ nombre }}</b><small>{{ usuario.rol_nombre }}{% if turno_usuario %} · {{ turno_usuario }}{% endif %}</small></div>
+    <a href="{{ url_for('auth.salir') }}" class="icono-btn" title="Cerrar sesión" aria-label="Cerrar sesión">{{ icono('salir') }}</a>
+  </div>
+</aside>
+
+<div class="contenido">
+  <header class="barra-superior">
+    <div class="marca-movil"><span class="marca-logo">{{ icono('logo') }}</span><b>VozMédica</b></div>
+    <div class="contexto">
+      {% if portal == 'clinica' %}
+      <span class="chip ocultar-movil">{{ icono('cama') }} Medicina Interna · Piso 2</span>
+      <span class="chip">{{ icono('reloj') }} <span class="ocultar-movil">Turno {{ turno_txt }} ·</span> <b>{{ hora }}</b></span>
+      {% if reloj_demo %}
+      <form method="post" action="{{ url_for('clinica.adelantar_reloj') }}" class="reloj-demo ocultar-movil"
+            title="Solo en la demo: en la vida real el tiempo pasa solo">
+        <button type="submit" class="btn btn-secundario btn-sm">Demo: adelantar reloj</button>
+      </form>
+      {% endif %}
+      {% else %}
+      <span class="chip chip-admin">{{ icono('escudo') }} Panel de administración</span>
+      {% endif %}
+    </div>
+    <div class="usuario-movil">
+      <span class="avatar avatar-sm" title="{{ nombre }} · {{ usuario.rol_nombre }}">{{ iniciales(nombre) }}</span>
+      <a href="{{ url_for('auth.salir') }}" class="icono-btn" title="Cerrar sesión" aria-label="Cerrar sesión">{{ icono('salir') }}</a>
+    </div>
+  </header>
+  <main class="pagina">
+    {% include "layouts/_avisos.html" %}
+    {% if entregas_por_recibir and request.endpoint != 'clinica.entrega' %}
+    <a class="aviso aviso-info aviso-enlace" href="{{ url_for('clinica.entrega') }}">{{ icono('turno') }}
+      <span>{{ entregas_por_recibir|map(attribute='e.entrega')|join(' y ') }} le entregó pacientes.
+        <b>Revíselos y recíbalos</b> para quedar a cargo.</span></a>
+    {% endif %}
+    {% block contenido %}{% endblock %}
+  </main>
+</div>
+
+<nav class="menu-inferior" aria-label="Menú">
+  {% for ruta, texto, corto, ic in menu %}
+  <a href="{{ url_for(ruta) }}" class="{% if activo == ruta %}activo{% endif %}">{{ icono(ic) }}<span>{{ corto }}</span></a>
+  {% endfor %}
+  {% if otro_portal %}<a href="{{ otro_portal }}">{{ icono('cambiar') }}<span>{{ 'Clínica' if portal == 'admin' else 'Admin' }}</span></a>{% endif %}
+</nav>
+{% endblock %}

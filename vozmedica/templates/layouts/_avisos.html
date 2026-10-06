@@ -1,0 +1,14 @@
+{% with mensajes = get_flashed_messages(with_categories=true) %}
+{% if mensajes %}
+<div class="avisos">
+{% for categoria, m in mensajes %}
+{% set cat = categoria if categoria in ('advertencia', 'exito', 'info') else 'info' %}
+<div class="aviso aviso-{{ cat }}" role="{{ 'alert' if cat == 'advertencia' else 'status' }}">
+  {{ icono({'advertencia': 'alerta', 'exito': 'check', 'info': 'info'}[cat]) }}
+  <span>{{ m }}</span>
+  <button type="button" class="aviso-cerrar" aria-label="Cerrar aviso" onclick="this.parentElement.remove()">{{ icono('x') }}</button>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}

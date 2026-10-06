@@ -1,0 +1,103 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Recursos{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div><h1>Recursos del servicio</h1><p class="sub">Consulte qué hay disponible y registre lo que usa.</p></div>
+</div>
+
+<div class="barra-filtros">
+  <div class="pestanas" role="tablist">
+    {% for clave, texto in tipos %}
+    <button type="button" role="tab" class="pestana {% if clave == tipo %}activa{% endif %}" data-tipo="{{ clave }}">{{ texto }} <span class="contador-tab">{{ conteo[clave] }}</span></button>
+    {% endfor %}
+  </div>
+  <label class="buscador">{{ icono('buscar') }}<input type="search" id="buscar" placeholder="Buscar recurso…" aria-label="Buscar recurso"></label>
+</div>
+
+<div class="rejilla-recursos">
+  {% for r in filas %}
+  <article class="tarjeta recurso {% if r.cantidad <= r.minimo %}recurso-bajo{% endif %}" data-tipo="{{ r.tipo }}" data-nombre="{{ r.nombre|lower }}">
+    <div class="recurso-cab">
+      <span class="recurso-icono">{{ icono({'Medicamento': 'pastilla', 'Insumo': 'paquete', 'Camilla': 'cama'}[r.tipo]) }}</span>
+      <h3>{{ r.nombre }}</h3>
+    </div>
+    <div class="recurso-cantidad">
+      <b>{{ r.cantidad }}</b><span>disponible{{ 's' if r.cantidad != 1 }}</span>
+      {% if r.cantidad <= r.minimo %}<span class="badge badge-alerta">Quedan pocas</span>{% endif %}
+    </div>
+
+    {% if r.id in abiertas %}
+    <p class="nota-estado">{{ icono('check') }} Faltante reportado a administración</p>
+    {% endif %}
+
+    <div class="recurso-acciones">
+      <details class="desplegable">
+        <summary class="btn btn-primario btn-bloque">Registrar uso</summary>
+        <form method="post" action="{{ url_for('clinica.usar_recurso', rid=r.id) }}" class="form-uso">
+          <div class="paso-cantidad">
+            <button type="button" class="btn btn-secundario" aria-label="Menos" onclick="this.nextElementSibling.stepDown()">−</button>
+            <input type="number" name="cantidad" value="1" min="1" inputmode="numeric" aria-label="Cantidad">
+            <button type="button" class="btn btn-secundario" aria-label="Más" onclick="this.previousElementSibling.stepUp()">+</button>
+          </div>
+          <input type="text" name="motivo" placeholder="¿Para qué? Ej.: cama 201 (opcional)">
+          <button type="submit" class="btn btn-primario btn-bloque">Confirmar uso</button>
+        </form>
+      </details>
+      {% if r.id not in abiertas %}
+      <form method="post" action="{{ url_for('clinica.reportar_faltante', rid=r.id) }}">
+        <button type="submit" class="btn btn-texto btn-sm">{{ icono('bandera') }} Reportar faltante</button>
+      </form>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+
+  <article class="tarjeta recurso" data-tipo="Camilla" data-nombre="camas libres en el servicio">
+    <div class="recurso-cab">
+      <span class="recurso-icono">{{ icono('cama') }}</span>
+      <h3>Camas libres en el servicio</h3>
+    </div>
+    <div class="recurso-cantidad">
+      <b>{{ camas_libres|length }}</b><span>libre{{ 's' if camas_libres|length != 1 }}</span>
+      {% if camas_libres|length <= 2 %}<span class="badge badge-alerta">Quedan pocas</span>{% endif %}
+    </div>
+    {% if camas_libres %}
+    <div class="lista-camas">{% for c in camas_libres %}<span class="cama">{{ c.numero }}</span>{% endfor %}</div>
+    {% endif %}
+    <p class="tenue nota-pie">Se actualiza sola al registrar ingresos y altas.</p>
+  </article>
+</div>
+<p class="vacio oculto" id="sin-resultados">No hay recursos que coincidan con la búsqueda.</p>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function () {
+    var tipo = {{ tipo|tojson }};
+    var tarjetas = document.querySelectorAll('.recurso');
+    var pestanas = document.querySelectorAll('.pestana');
+    var buscar = document.getElementById('buscar');
+    function filtrar() {
+      var texto = buscar.value.trim().toLowerCase();
+      var visibles = 0;
+      tarjetas.forEach(function (t) {
+        // con busqueda se buscan todos los tipos; sin busqueda solo la pestaña activa
+        var ok = texto ? t.dataset.nombre.indexOf(texto) !== -1 : t.dataset.tipo === tipo;
+        t.hidden = !ok;
+        if (ok) visibles++;
+      });
+      document.getElementById('sin-resultados').classList.toggle('oculto', visibles > 0);
+    }
+    pestanas.forEach(function (p) {
+      p.addEventListener('click', function () {
+        tipo = p.dataset.tipo;
+        buscar.value = '';
+        pestanas.forEach(function (o) { o.classList.toggle('activa', o === p); });
+        history.replaceState(null, '', '?tipo=' + encodeURIComponent(tipo));
+        filtrar();
+      });
+    });
+    buscar.addEventListener('input', filtrar);
+    filtrar();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Personal{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div><h1>Personal</h1><p class="sub">Registre empleados y asígneles un rol. Lo que puede ver cada rol se define en <a class="enlace" href="{{ url_for('admin.roles') }}">Roles y permisos</a>.</p></div>
+</div>
+
+<section class="tarjeta">
+  <div class="tarjeta-cab"><h2>{{ icono('usuario_mas') }} Registrar empleado</h2></div>
+  <form method="post" action="{{ url_for('admin.registrar_empleado') }}" class="form-rejilla">
+    <label class="campo ancho-2"><span>Nombre (como aparecerá en el sistema)</span><input type="text" name="nombre" placeholder="Ej.: Enf. Sofía Cano"></label>
+    <label class="campo"><span>Documento</span><input type="text" name="documento" inputmode="numeric"></label>
+    <label class="campo"><span>Rol</span>
+      <select name="rol">
+        <option value="">Seleccione…</option>
+        {% for r in roles %}<option value="{{ r.clave }}">{{ r.nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="campo"><span>Turno</span>
+      <select name="turno">
+        <option value="">Sin turno (administrativo)</option>
+        {% for t in turnos %}<option value="{{ loop.index0 }}">{{ t }}</option>{% endfor %}
+      </select>
+    </label>
+    <div class="ancho-2 acciones-form"><button type="submit" class="btn btn-primario">{{ icono('mas') }} Registrar</button></div>
+  </form>
+</section>
+
+<section class="tarjeta sin-relleno">
+  <div class="tarjeta-cab con-relleno"><h2>{{ icono('pacientes') }} Empleados ({{ empleados|length }})</h2></div>
+  <table class="tabla tabla-resp">
+    <thead><tr><th>Empleado</th><th>Documento</th><th>Rol</th><th>Turno</th><th></th></tr></thead>
+    <tbody>
+    {% for e in empleados %}
+    <tr>
+      <td data-label="Empleado">
+        <div class="persona"><span class="avatar avatar-sm">{{ iniciales(e.nombre) }}</span><b>{{ e.nombre }}</b>{% if not e.activo %}<span class="badge badge-neutro">Inactivo</span>{% endif %}</div>
+      </td>
+      <td data-label="Documento">{{ e.documento }}</td>
+      <td data-label="Rol">
+        <form method="post" action="{{ url_for('admin.cambiar_rol', eid=e.id) }}" class="form-fila">
+          <select name="rol" aria-label="Rol de {{ e.nombre }}" onchange="this.form.submit()">
+            {% for r in roles %}<option value="{{ r.clave }}" {% if r.clave == e.rol %}selected{% endif %}>{{ r.nombre }}</option>{% endfor %}
+          </select>
+          <noscript><button type="submit" class="btn btn-secundario btn-sm">Guardar</button></noscript>
+        </form>
+      </td>
+      <td data-label="Turno">
+        <form method="post" action="{{ url_for('admin.cambiar_turno', eid=e.id) }}" class="form-fila">
+          <select name="turno" aria-label="Turno de {{ e.nombre }}" onchange="this.form.submit()">
+            <option value="" {% if e.turno is none %}selected{% endif %}>Sin turno</option>
+            {% for t in turnos %}<option value="{{ loop.index0 }}" {% if e.turno == loop.index0 %}selected{% endif %}>{{ t }}</option>{% endfor %}
+          </select>
+          <noscript><button type="submit" class="btn btn-secundario btn-sm">Guardar</button></noscript>
+        </form>
+      </td>
+      <td class="celda-accion">
+        {% if not e.activo %}
+        <form method="post" action="{{ url_for('admin.reactivar_empleado', eid=e.id) }}">
+          <button type="submit" class="btn btn-secundario btn-sm">Reactivar</button>
+        </form>
+        {% elif e.id != usuario.id %}
+        <form method="post" action="{{ url_for('admin.desactivar_empleado', eid=e.id) }}"
+              onsubmit="return confirm('¿Desactivar a {{ e.nombre }}? Ya no podrá ingresar; sus registros clínicos se conservan.')">
+          <button type="submit" class="btn btn-peligro-suave btn-sm">Desactivar</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="tarjeta sin-relleno">
+  <div class="tarjeta-cab con-relleno">
+    <h2>{{ icono('usuario') }} Pacientes del portal y su profesional</h2>
+  </div>
+  <p class="sub con-relleno-x">Para desactivar a un médico, primero reasigne aquí a sus pacientes. Sus citas programadas pasan al nuevo profesional si caen en su turno; las demás se cancelan para reprogramarlas.</p>
+  <table class="tabla tabla-resp">
+    <thead><tr><th>Paciente</th><th>Documento</th><th>Profesional asignado</th></tr></thead>
+    <tbody>
+    {% for p in pacientes %}
+    <tr>
+      <td data-label="Paciente"><b>{{ p.nombre }}</b></td>
+      <td data-label="Documento">{{ p.documento }}</td>
+      <td data-label="Profesional">
+        <form method="post" action="{{ url_for('admin.asignar_profesional', doc=p.documento) }}" class="form-fila">
+          <select name="profesional" aria-label="Profesional de {{ p.nombre }}" onchange="this.form.submit()">
+            {% if p.profesional not in medicos %}<option value="" selected>{{ p.profesional }} (sin acceso a citas)</option>{% endif %}
+            {% for m in medicos %}<option {% if m == p.profesional %}selected{% endif %}>{{ m }}</option>{% endfor %}
+          </select>
+          <noscript><button type="submit" class="btn btn-secundario btn-sm">Guardar</button></noscript>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

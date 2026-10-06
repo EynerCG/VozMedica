@@ -1,0 +1,140 @@
+{% extends "layouts/personal.html" %}
+{% block titulo %}Entrega de turno{% endblock %}
+{% block contenido %}
+{% set medica = tipo == 'medica' %}
+<div class="encabezado">
+  <div>
+    <h1>Entrega de turno {{ 'médica' if medica else 'de enfermería' }}</h1>
+    <p class="sub">
+      {% if turno is none %}Usted no tiene turno asignado.
+      {% else %}Su turno: <b>{{ turno_usuario }}</b>. Entrega sus pacientes a {{ 'un médico' if medica else 'una enfermera' }} del turno <b>{{ siguiente }}</b>.{% endif %}
+    </p>
+  </div>
+  {% if filas and ventana %}<span class="chip chip-grande" id="progreso">0 de {{ filas|length }} revisados</span>{% endif %}
+</div>
+
+{# ---------- 1. Lo que me entregaron ---------- #}
+{% for x in por_recibir %}{% set e = x.e %}
+<section class="tarjeta estado-entrega">
+  <span class="kpi-icono">{{ icono('turno') }}</span>
+  <div class="crece">
+    <h2>{{ e.entrega }} le entregó {{ x.pacientes|length }} paciente{{ 's' if x.pacientes|length != 1 }} ({{ e.turno }})</h2>
+    <p class="sub">Entregado a las {{ e.hora }}.{% if e.observaciones != '-' %} Observaciones: “{{ e.observaciones }}”.{% endif %}</p>
+    <ul class="lista-simple lista-recibir">
+      {% for p in x.pacientes %}
+      <li><span class="cama">{{ p.cama }}</span> <b>{{ p.nombre }}</b>
+        <span class="badge badge-{{ ESTADO_CLASE[p.estado] }}">{{ ESTADOS[p.estado] }}</span>
+        {% if p.nota %}<span class="nota-entrega">“{{ p.nota }}”</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <form method="post" action="{{ url_for('clinica.recibir_turno', eid=e.id) }}">
+    <button type="submit" class="btn btn-primario">{{ icono('check') }} Recibir pacientes</button>
+  </form>
+</section>
+{% endfor %}
+
+{# ---------- 2. Lo que entregué y aún no reciben ---------- #}
+{% for x in enviadas %}{% set e = x.e %}
+<section class="tarjeta estado-entrega estado-espera">
+  <span class="kpi-icono">{{ icono('reloj') }}</span>
+  <div class="crece">
+    <h2>Esperando a que {{ e.recibe }} reciba</h2>
+    <p class="sub">Camas {{ x.pacientes|map(attribute='cama')|join(', ') }} · entregadas a las {{ e.hora }}.
+      Siguen a su cargo hasta que {{ e.recibe }} confirme con su usuario.</p>
+  </div>
+  <form method="post" action="{{ url_for('clinica.anular_entrega', eid=e.id) }}" onsubmit="return confirm('¿Anular esta entrega?')">
+    <button type="submit" class="btn btn-secundario">Anular</button>
+  </form>
+</section>
+{% endfor %}
+
+{# ---------- 3. Mis pacientes por entregar ---------- #}
+{% if turno is not none %}
+  {% if not filas %}
+  <div class="tarjeta vacio-grande">
+    <span class="vacio-icono">{{ icono('check') }}</span>
+    <h2>No tiene pacientes por entregar</h2>
+    <p class="sub">{% if enviadas %}Ya entregó todos sus pacientes.{% else %}En este momento no tiene pacientes a su cargo.{% endif %}</p>
+  </div>
+  {% else %}
+    {% if not ventana %}
+    <div class="aviso aviso-info">{{ icono('info') }}<span>La entrega se habilita en la última hora de su turno ({{ turno_usuario }}).
+      Por ahora puede revisar el estado de sus pacientes.</span></div>
+    {% endif %}
+    <form method="post" id="form-entrega" {% if not ventana %}class="solo-lectura"{% endif %}>
+      <div class="lista-entrega">
+        {% for f in filas %}{% set p = f.p %}
+        <div class="tarjeta entrega-item">
+          <label class="entrega-check">
+            <input type="checkbox" name="rev_{{ p.id }}" value="1" class="check-revisado" {% if form.get('rev_%d' % p.id) %}checked{% endif %} {% if not ventana %}disabled{% endif %}>
+            <span class="casilla-grande" aria-hidden="true">{{ icono('visto') }}</span>
+          </label>
+          <div class="crece">
+            <div class="entrega-titulo">
+              <span class="cama">{{ p.cama }}</span><b>{{ p.nombre }}</b>
+              <span class="badge badge-{{ ESTADO_CLASE[p.estado] }}">{{ ESTADOS[p.estado] }}</span>
+              {% if p.alergias != 'Ninguna' %}<span class="badge badge-peligro">Alergia: {{ p.alergias }}</span>{% endif %}
+              {% if medica and p.cubre %}<span class="badge badge-neutro">Tratante: {{ p.medico }}</span>{% endif %}
+            </div>
+            <div class="entrega-columnas">
+              <div>
+                <h4>Queda pendiente</h4>
+                <ul class="lista-simple">
+                  {% for texto, est in f.queda %}
+                  <li>{{ texto }}{% if est %} <span class="badge badge-{{ est[1] }}">{{ est[0] }}</span>{% endif %}</li>
+                  {% else %}<li class="tenue">Nada pendiente</li>{% endfor %}
+                </ul>
+              </div>
+              <div>
+                <h4>Última novedad</h4>
+                {% if f.ultima %}<p><span class="hora">{{ f.ultima.hora }}</span> {{ f.ultima.texto }}</p>{% else %}<p class="tenue">Sin novedades</p>{% endif %}
+              </div>
+            </div>
+            {% if ventana %}
+            <div class="form-fila entrega-destino">
+              <label class="campo"><span>Lo recibe ({{ siguiente }})</span>
+                <select name="receptor_{{ p.id }}">
+                  {% for r in receptores %}<option {% if form.get('receptor_%d' % p.id, f.defecto) == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+                </select>
+              </label>
+              <label class="campo crece"><span>{{ 'Qué vigilar' if medica else 'Nota para quien recibe' }} (opcional)</span>
+                <input type="text" name="nota_{{ p.id }}" value="{{ form.get('nota_%d' % p.id, '') }}"
+                       placeholder="{{ 'Ej.: vigilar saturación, pendiente hemocultivo' if medica else 'Ej.: curación pendiente a las 16:00' }}">
+              </label>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if ventana %}
+      <section class="tarjeta form-rejilla cierre-entrega">
+        <label class="campo ancho-3"><span>Observaciones generales</span><input type="text" name="obs" value="{{ form.get('obs', '') }}" placeholder="Opcional"></label>
+        <div class="ancho-3 acciones-form">
+          <button type="submit" class="btn btn-primario">{{ icono('turno') }} Entregar turno</button>
+        </div>
+      </section>
+      {% endif %}
+    </form>
+  {% endif %}
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+  (function () {
+    var checks = document.querySelectorAll('.check-revisado');
+    var etiqueta = document.getElementById('progreso');
+    if (!etiqueta) return;
+    function contar() {
+      var n = 0;
+      checks.forEach(function (c) { if (c.checked) n++; });
+      etiqueta.textContent = n + ' de ' + checks.length + ' revisados';
+      etiqueta.classList.toggle('chip-exito', n === checks.length && n > 0);
+    }
+    checks.forEach(function (c) { c.addEventListener('change', contar); });
+    contar();
+  })();
+</script>
+{% endblock %}
